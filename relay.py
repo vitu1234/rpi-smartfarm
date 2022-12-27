@@ -1,0 +1,14 @@
+import time
+import RPi.GPIO as GPIO
+import spidev
+
+relay_ch = 17
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+
+GPIO.setup(relay_ch, GPIO.OUT)
+GPIO.output(relay_ch, GPIO.LOW)
+time.sleep(5)
+GPIO.output(relay_ch, GPIO.HIGH)
+GPIO.cleanup()
