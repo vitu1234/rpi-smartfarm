@@ -1,6 +1,5 @@
 import time
 import RPi.GPIO as GPIO
-import spidev
 
 relay_ch = 17
 
