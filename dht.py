@@ -8,14 +8,15 @@ import RPi.GPIO as gp
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
-gp.setmode(gp.BOARD)  
-gp.setup(8,gp.IN)  
-
 
 # Initial the dht device, with data pin connected to:
 dhtDevice = adafruit_dht.DHT11(board.D4) 
 relay_ch = 17
+soil_sensor = 8
 
+# soil moisture
+# gp.setmode(gp.BOARD)  
+gp.setup(soil_sensor,gp.IN)   
 
 # you can pass DHT22 use_pulseio=False if you wouldn't like to use pulseio.
 # This may be necessary on a Linux single board computer like the Raspberry Pi,
@@ -39,19 +40,25 @@ while True:
                 temperature_f, temperature_c, humidity
             )
         )
+
+        
         
         print('\nSoil Moisture\n')
-        if (GPIO.input(8))==0:
+
+        print(GPIO.input(soil_sensor))
+        print(not gp.input(soil_sensor))
+
+        if (not gp.input(soil_sensor))==0:
             print('\n Soil is Wet - turn off pump\n')
             GPIO.setup(relay_ch, GPIO.OUT)
             GPIO.output(relay_ch, GPIO.HIGH)
-            time.sleep(5)
+            # time.sleep(5)
             
-        elif (GPIO.input(8))==1:
+        elif (not gp.input(soil_sensor))==1:
             print('\n Soil is Dry - turn on pump\n')
             GPIO.setup(relay_ch, GPIO.OUT)
             GPIO.output(relay_ch, GPIO.LOW)
-            time.sleep(5)
+            # time.sleep(5)
 
     except RuntimeError as error:
         # Errors happen fairly often, DHT's are hard to read, just keep going
