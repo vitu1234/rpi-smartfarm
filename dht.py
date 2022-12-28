@@ -4,10 +4,17 @@ import board
 import adafruit_dht
 import RPi.GPIO as GPIO
 import RPi.GPIO as gp  
+import datetime
+
+#influxdb
+import influxdb_client
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
-
+# Nf8h0NO5xQZMKx6nCcK0OtfLozuFngoREmynFKkIK_Zum3kcNw0F7AIjxWFAu5QwoO5Nz1N3RYgbxKD6zSOysA==
 
 # Initial the dht device, with data pin connected to:
 dhtDevice = adafruit_dht.DHT11(board.D4) 
@@ -41,6 +48,29 @@ while True:
             )
         )
 
+        #InfluxDB Connection Details
+        bucket = "firstbucket"
+        org = "primary"
+        token = "Nf8h0NO5xQZMKx6nCcK0OtfLozuFngoREmynFKkIK_Zum3kcNw0F7AIjxWFAu5QwoO5Nz1N3RYgbxKD6zSOysA=="
+        # Store the URL of your InfluxDB instance
+        url="http://192.168.13.43:9003"
+
+        client = influxdb_client.InfluxDBClient(
+            url=url,
+            token=token,
+            org=org
+        )
+
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+
+
+        p = influxdb_client.Point("TemperatureSensor").tag("location", "sensor1").field("temperature", temperature_c)
+        write_api.write(bucket=bucket, org=org, record=p)
+        client.close()
+
+        p = influxdb_client.Point("TemperatureSensor").tag("location", "sensor1").field("humidity", humidity)
+        write_api.write(bucket=bucket, org=org, record=p)
+        client.close()
         
         
         print('\nSoil Moisture\n')
