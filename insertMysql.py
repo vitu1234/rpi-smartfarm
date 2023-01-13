@@ -63,7 +63,7 @@ while True:
         with connection:
             with connection.cursor() as cursor:
                 # Create a new record
-                sql = "INSERT INTO `sensor_readings` (`temperature`, `humidity`, `soil_moisture`, `adc_value`) VALUES (%s, %s, %s, %s)"
+                sql = "INSERT INTO `sensor_readings2` (`temperature`, `humidity`, `soil_moisture`, `adc_value`) VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, (temperature_c, humidity, moisture2, adc_value))
                 connection.commit()
 
@@ -87,4 +87,4 @@ while True:
         dhtDevice.exit()
         raise error
 
-    time.sleep(30.0)
+    time.sleep(60.0)
