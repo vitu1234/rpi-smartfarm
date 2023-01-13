@@ -23,7 +23,7 @@ port = 1883
 # generate client ID with pub prefix randomly
 random_id = random.randint(0, 1000)
 client_id = f'sensor-mqtt-dht'
-topic_temp = f'sensor-mqtt-dht-temp-{random_id}'
+topic_temp = f'sensor-mqtt-dht-temp'
 topic_hum = f'sensor-mqtt-dht-humid-{random_id}'
 # username = 'emqx'
 # password = 'public'
