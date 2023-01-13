@@ -19,12 +19,12 @@ from adafruit_mcp3xxx.analog_in import AnalogIn
 
 broker = '192.168.13.43'
 port = 1883
-topic = "python/mqtt"
+# topic = "python/mqtt"
 # generate client ID with pub prefix randomly
 random_id = random.randint(0, 1000)
-client_id = f'dht-mqtt-sensor-{random_id}'
-client_id_temp = f'dht-mqtt-temp-{random_id}'
-client_id_hum = f'dht-mqtt-humid-{random_id}'
+client_id = f'sensor-mqtt-dht'
+topic_temp = f'sensor-mqtt-dht-temp-{random_id}'
+topic_hum = f'sensor-mqtt-dht-humid-{random_id}'
 # username = 'emqx'
 # password = 'public'
 
@@ -45,23 +45,29 @@ def connect_mqtt():
 def publish(client):
     msg_count = 0
     while True:
-        
+        time.sleep(10)
         temperature_c = dhtDevice.temperature
         temperature_f = temperature_c * (9 / 5) + 32
         humidity = dhtDevice.humidity
-        print("Temp: {:.1f} F / {:.1f} C    Humidity: {}% ".format(temperature_f, temperature_c, humidity))
-        msg = temperature_c
+        
+        if humidity is not None and temperature_c is not None:
+            result = client.publish(topic_temp, temperature_c)
+            result1 = client.publish(topic_hum, humidity)
+            # result: [0, 1]
+            status = result[0]
+            status1 = result1[0]
+            if status == 0:
+                print(f"Send `{temperature_c}` to topic `{topic_temp}`")
+            else:
+                print(f"Failed to send message to topic {topic_temp}")
 
-        time.sleep(10)
-        result = client.publish(topic, msg)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Send `{msg}` to topic `{topic}`")
+            if status1 == 0:
+                print(f"Send `{humidity}` to topic `{topic_hum}`")
+            else:
+                print(f"Failed to send message to topic {humidity}")
         else:
-            print(f"Failed to send message to topic {topic}")
-
-        result2 = client.publish(topic, msg)
+            result1 = client.publish(topic_hum, "Failed")
+            result = client.publish(topic_temp, "Failed")
         msg_count += 1
 
 def run():
@@ -69,7 +75,7 @@ def run():
         try:
             client = connect_mqtt()
             client.loop_start()
-            publish(client)
+            # publish(client)
         except RuntimeError as error:
             # Errors happen fairly often, DHT's are hard to read, just keep going
             print(error.args[0])
