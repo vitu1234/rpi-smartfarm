@@ -4,7 +4,7 @@ import board
 import adafruit_dht
 import RPi.GPIO as GPIO
 import RPi.GPIO as gp  
-import datetime
+import json
 from paho.mqtt import client as mqtt_client
 
 # Initial the dht device, with data pin connected to:
@@ -17,13 +17,14 @@ GPIO.setup(relay_ch, GPIO.OUT)
 import adafruit_mcp3xxx.mcp3008 as MCP
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
-broker = '192.168.13.43'
+broker = '192.168.13.203'
 port = 1883
 # topic = "python/mqtt"
 # generate client ID with pub prefix randomly
+LOCATION         = "location" 
 random_id = random.randint(0, 1000)
 client_id = f'sensor-mqtt-dht'
-topic_temp = f'sensor-mqtt-dht-temp'
+topic = f'sensors/'+LOCATION
 topic_hum = f'sensor-mqtt-dht-humid-{random_id}'
 # username = 'emqx'
 # password = 'public'
@@ -45,37 +46,36 @@ def connect_mqtt():
 def publish(client):
     msg_count = 0
     while True:
-        time.sleep(10)
         temperature_c = dhtDevice.temperature
         temperature_f = temperature_c * (9 / 5) + 32
         humidity = dhtDevice.humidity
-        
+        payload = '{"location":"' + LOCATION + '","temperature":' + str(temperature_c) + ',"humidity":' + str(humidity) + '}'
+        # payload = '{"location":"'+LOCATION+', "}'
+        data = {
+            "location": LOCATION,
+            "temperature": temperature_c,
+            "humidity": humidity
+        }
+        payload = json.dumps(data)
+
         if humidity is not None and temperature_c is not None:
-            result = client.publish(topic_temp, temperature_c)
-            result1 = client.publish(topic_hum, humidity)
+            result = client.publish(topic, payload)
             # result: [0, 1]
             status = result[0]
-            status1 = result1[0]
             if status == 0:
-                print(f"Send `{temperature_c}` to topic `{topic_temp}`")
+                print(f"Send `{payload}` to topic `{topic}`")
             else:
-                print(f"Failed to send message to topic {topic_temp}")
-
-            if status1 == 0:
-                print(f"Send `{humidity}` to topic `{topic_hum}`")
-            else:
-                print(f"Failed to send message to topic {humidity}")
+                print(f"Failed to send message to topic {topic}")
         else:
-            result1 = client.publish(topic_hum, "Failed")
-            result = client.publish(topic_temp, "Failed")
+            result = client.publish(topic, "Failed")
         msg_count += 1
-
+        time.sleep(10)
 def run():
     while True:
         try:
             client = connect_mqtt()
             client.loop_start()
-            # publish(client)
+            publish(client)
         except RuntimeError as error:
             # Errors happen fairly often, DHT's are hard to read, just keep going
             print(error.args[0])
