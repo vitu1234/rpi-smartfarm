@@ -45,7 +45,7 @@ GPIO.setup(relay_ch, GPIO.OUT)
 #Calibraton values
 min_moisture = 26880
 max_moisture = 65472
-random_id = random.randint(0, 10000)
+random_id = random.randint(100, 1000)
 
 #MQTT SETUP
 broker = os.getenv("MQTT_BROKER_ADDR", "127.0.0.1") #set to default localhost to avoid program crashing
@@ -183,6 +183,13 @@ def save_actuators_action(flotta_egdedevice_id,temperature, humidity,actual_soil
     if(database != 'error'):
         response = False
         try:
+            collection1 = database["devices"]
+            cursor2 = collection1.find_one({"flotta_egdedevice_id":device_id})
+            mode =""
+            if(cursor2 is not None):
+                mode = cursor2['mode']
+            else:
+                mode = "Unknown Mode"
             record = {
                 "flotta_egdedevice_id": flotta_egdedevice_id,
                 "temperature":temperature,
@@ -190,6 +197,7 @@ def save_actuators_action(flotta_egdedevice_id,temperature, humidity,actual_soil
                 "actual_soil_moisture": actual_soil_moisture,
                 "predicted_soil_moisture":predicted_soil_moisture,
                 "is_irrigated": is_irrigated,
+                "mode": mode,
                 "timestamp": datetime.now()
             }
             collection = database["device_actuators_timing"]
@@ -246,7 +254,7 @@ def publish_switch_trigger(client):
 
                             if(last_activity != 'first_time'):
                                 print('Last activitiy in mins: '+str(last_activity))
-                                #turn on pump if ac
+                                #turn on pump if last activity is gearer than 1hr; last activity is in minutes
                                 if(last_activity >= 60):
                                     save_actuators_action(device_id,temperature, humidity,actual_soil_moisture, predicted_soil_moisture,1)
                                     #publish turn on pumps
@@ -264,7 +272,7 @@ def publish_switch_trigger(client):
                                         print(f"Failed to send pump action message to topic {topic}")
                                     
                                     #wait for 5mins and shutdown pump
-                                    time.sleep(5)
+                                    time.sleep(300)
 
                                     save_actuators_action(device_id,temperature, humidity,actual_soil_moisture, predicted_soil_moisture,0)
                                     data = {
@@ -298,7 +306,7 @@ def publish_switch_trigger(client):
                                     print(f"Failed to send pump action message to topic {topic}")
                                 
                                 #wait for 5mins and shutdown pump
-                                time.sleep(5)
+                                time.sleep(300) #for now this is 5s for testing
 
                                 save_actuators_action(device_id,temperature, humidity,actual_soil_moisture, predicted_soil_moisture,0)
                                 data = {
