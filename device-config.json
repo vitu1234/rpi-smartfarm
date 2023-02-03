@@ -1,0 +1,46 @@
+{
+    "configuration": {
+     "heartbeat": {
+      "hardware_profile": {},
+      "period_seconds": 60
+     },
+     "metrics": {
+      "receiver": {
+       "request_num_samples": 30000,
+       "timeout_seconds": 10
+      }
+     },
+     "mounts": []
+    },
+    "device_id": "3896f44dfc966cc16",
+    "version": "4930048",
+    "workloads": [
+     {
+      "annotations": {
+       "run.oci.keep_original_groups": "1"
+      },
+      "name": "dhtsensor1",
+      "namespace": "default",
+      "specification": "containers:\n- image: vitu1/python-docker-dht\n  name: dhtsensor1\n  resources: {}\n"
+     },
+     {
+      "annotations": {
+       "run.oci.keep_original_groups": "1"
+      },
+      "configmaps": [
+       "apiVersion: v1\ndata:\n  device_id: 533eab3896f44dfc966cc16ef84d4ef2\nkind: ConfigMap\nmetadata:\n  creationTimestamp: null\n  name: env-config\n"
+      ],
+      "name": "dhtsensor12",
+      "namespace": "default",
+      "specification": "containers:\n- env:\n  - name: USER1\n    valueFrom:\n      configMapKeyRef:\n        key: device_id\n        name: env-config\n  image: vitu1/test_env_access\n  name: nginx\n  resources: {}\n"
+     },
+     {
+      "annotations": {
+       "run.oci.keep_original_groups": "1"
+      },
+      "name": "dhtsensor12q",
+      "namespace": "default",
+      "specification": "containers:\n- image: vitu1/python-docker-dht\n  name: dhtsensor1\n  resources: {}\n"
+     }
+    ]
+   }
