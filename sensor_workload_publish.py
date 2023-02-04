@@ -210,6 +210,13 @@ def subscribe(client: mqtt_client):
                         print("register file not exits, creating it")
                         f = open("device_register.json", "a")
                         f.close()
+                elif(msg_json['mqtt_response_for'] =="registered_device_user_claim"):
+                    if(os.path.exists("device_claim.json")):
+                        print("claim file exists")
+                    else:
+                        print("claim file not exits, creating it")
+                        f = open("device_claim.json", "a")
+                        f.close()
                     
                 else:
                     print("Got unknown device response type")
@@ -227,6 +234,7 @@ def subscribe(client: mqtt_client):
 def run():
     client = connect_mqtt()
     while True:
+        subscribe(client)
         register_device_in_db(client)
         time.sleep(5)
         get_device_details(client)
@@ -235,7 +243,7 @@ def run():
         if(readings !=""):
             publish_sensor_readings(client, readings)
         
-        subscribe(client)
+        
         time.sleep(3)
     # client.loop_start()
 
