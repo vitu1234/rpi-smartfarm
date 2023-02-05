@@ -148,7 +148,7 @@ def read_sensor_values():
                 "humidity": humidity,
             }
             payload = json.dumps(data)
-            data_string = "flotta_edgedevice_id,temperature,humidity"+get_device_id_from_files()+","+str(temperature_c)+","+str(humidity)
+            data_string = "flotta_edgedevice_id,temperature,humidity \n\n"+get_device_id_from_files()+","+str(temperature_c)+","+str(humidity)
     except RuntimeError as error:
         # Errors happen fairly often, DHT's are hard to read, just keep going
         print(error.args[0])
@@ -163,6 +163,8 @@ def read_sensor_values():
 def publish_sensor_readings(my_mqtt_client, readings):
     #only send sensor values if both device register and claim files exists
     if(os.path.exists("device_claim.json") and os.path.exists("device_register.json")):
+        print(readings)
+
         device_id = get_device_id_from_files()
         payload = readings
         result = my_mqtt_client.publish(topic, payload)
@@ -174,67 +176,13 @@ def publish_sensor_readings(my_mqtt_client, readings):
     else:
         print("device not yet registered or claimed, cannot publish anything")
     
-def subscribe(client: mqtt_client):
-    def on_message(client, userdata, msg):
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-        decoded_message=str(msg.payload.decode("utf-8"))
-        msg_json=json.loads(decoded_message)
 
-        #if this is a response to a request made earlier
-        if("device_id" in msg_json and "mqtt_response_for" in msg_json):
-            #if the response received is for this device
-            if(msg_json['device_id'] == get_device_id_from_files()):
-                #handle the response response type
-                if(msg_json['mqtt_response_for'] == "devices_details"):
-                    print("Got device details response")
-                    print(msg_json['devices_details'])
-                    # print(msg_json['devices_details'][0]['user_claim'])
-
-                    #if device is claimed, create claim file if it does not exist
-                    if(msg_json['devices_details'][0]['user_claim']):
-                        print("device is claimed")
-                    else:
-                        if(os.path.exists("device_claim.json")):
-                            print("claim file exists")
-                        else:
-                            print("claim file not exits, creating it")
-                            f = open("device_claim.json", "a")
-                            f.close()
-
-                elif(msg_json['mqtt_response_for'] == "register_device"):
-                    #if file exists device is registered already
-                    print("Got device register response")
-                    if(os.path.exists("device_register.json")):
-                        print("register file exists")
-                    else:
-                        print("register file not exits, creating it")
-                        f = open("device_register.json", "a")
-                        f.close()
-                elif(msg_json['mqtt_response_for'] =="registered_device_user_claim"):
-                    if(os.path.exists("device_claim.json")):
-                        print("claim file exists")
-                    else:
-                        print("claim file not exits, creating it")
-                        f = open("device_claim.json", "a")
-                        f.close()
-                    
-                else:
-                    print("Got unknown device response type")
-
-                    
-            else:
-                print("Messaged received | not for this device")
-        else:
-            print("Messaged received | not a response")        
-
-    client.subscribe(topic)
-    client.on_message = on_message
 
 
 def run():
     client = connect_mqtt()
     while True:
-        subscribe(client)
+        
         register_device_in_db(client)
         time.sleep(5)
         get_device_details(client)
@@ -243,7 +191,7 @@ def run():
         if(readings !=""):
             publish_sensor_readings(client, readings)
         
-        
+        # subscribe(client)
         time.sleep(3)
     # client.loop_start()
 
