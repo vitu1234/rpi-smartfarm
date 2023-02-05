@@ -73,7 +73,7 @@ def connect_mqtt():
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(client_id)
+    client = mqtt_client.Client()
     client.username_pw_set("mqtt", "mqtt")
     client.on_connect = on_connect
     client.connect(broker, port)
@@ -112,6 +112,7 @@ def register_device_mongodb():
                 # inserted
                 record = {
                         "flotta_egdedevice_id": device_id,
+                        "user_claim": False,
                         "mode":"Auto"
                         }
                 # Inserting the record1 in the collection
@@ -151,7 +152,7 @@ def last_device_actuators_activity():
     collection = database["device_actuators_timing"]
 
     #check if device exists
-    cursor2 = collection.find_one({"flotta_egdedevice_id":device_id}, sort=[( 'timestamp', pymongo.DESCENDING )])
+    cursor2 = collection.find_one({"flotta_egdedevice_id":device_id, "is_irrigated":1}, sort=[( 'timestamp', pymongo.DESCENDING )])
     
     if(cursor2 is not None):
         date_time_str = str(cursor2['timestamp'])
@@ -221,6 +222,7 @@ def save_actuators_action(flotta_egdedevice_id,temperature, humidity,actual_soil
 def publish_switch_trigger(client):
     #check edge device registration status
     registered = register_device_mongodb()
+    client = connect_mqtt()
     if(registered):
         #check if system mode is Auto or Manual first
         device_mode = get_preset_device_mode()
@@ -269,7 +271,7 @@ def publish_switch_trigger(client):
                                     if status == 0:
                                         print(f"Send action message `{payload}` to topic `{topic}`")
                                     else:
-                                        print(f"Failed to send pump action message to topic {topic}")
+                                        print(f"Failed to send pump action message to topica {topic}")
                                     
                                     #wait for 5mins and shutdown pump
                                     time.sleep(300)
@@ -365,6 +367,8 @@ def publish():
                 if status == 0:
                     print(f"Send `{payload}` to topic `{topic}`")
                 else:
+                    client.loop_stop()
+                    client = connect_mqtt() 
                     print(f"Failed to send message to topic {topic}")
             else:
                 print(f"Failed to send message to topic, data not collected {topic}")
