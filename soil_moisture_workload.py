@@ -51,7 +51,7 @@ random_id = random.randint(100, 1000)
 broker = os.getenv("MQTT_BROKER_ADDR", "127.0.0.1") #set to default localhost to avoid program crashing
 topic = os.getenv("MQTT_TOPIC", "sensors/data")
 # device_id = os.getenv("DEVICE_ID", "pub_env_device_id_not_set"+str(random_id))
-ML_SERVICE_ADDR = os.getenv("API_SERVICE_ADDR", "127.0.0.1")
+ML_SERVICE_ADDR = os.getenv("ML_SERVICE_ADDR", "127.0.0.1")
 port = 1883
 
 DEVICE_TYPE = os.getenv("DEVICE_TYPE", "sensor")
@@ -60,12 +60,12 @@ DEVICE_TYPE = os.getenv("DEVICE_TYPE", "sensor")
 # client_id = device_id
 
 #MONGODB SETUP
-# MONGO_ADDR = os.getenv("MONGO_ADDR", "127.0.0.1")
-# MONGO_USERNAME = os.getenv("MONGO_USERNAME", "not_set_username")
-# MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "not_set_password")
-# MONGO_DB = os.getenv("MONGO_DB", "env_not_set_mongo_db")
-# # Provide the mongodb atlas url to connect python to mongodb using pymongo
-# CONNECTION_STRING = "mongodb://"+MONGO_USERNAME+":"+MONGO_PASSWORD+"@"+MONGO_ADDR
+MONGO_ADDR = os.getenv("MONGO_ADDR", "127.0.0.1")
+MONGO_USERNAME = os.getenv("MONGO_USERNAME", "not_set_username")
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "not_set_password")
+MONGO_DB = os.getenv("MONGO_DB", "env_not_set_mongo_db")
+# Provide the mongodb atlas url to connect python to mongodb using pymongo
+CONNECTION_STRING = "mongodb://"+MONGO_USERNAME+":"+MONGO_PASSWORD+"@"+MONGO_ADDR
 
 #MQTT CONNECT
 def connect_mqtt() -> mqtt_client:
@@ -103,9 +103,7 @@ def register_device_in_db(my_mqtt_client):
         data_array ={
             "flotta_egdedevice_id": device_id,
             "device_type":DEVICE_TYPE,
-            "mqtt_request_for":"register_device",
-            "raw_readings_type": "humidity,temperature",
-            "raw_readings_units_type": "%,°C"
+            "mqtt_request_for":"register_device"
         }
         payload = json.dumps(data_array)
         result = my_mqtt_client.publish(topic, payload)
@@ -139,18 +137,22 @@ def read_sensor_values():
     data_string =""
     try:
         time.sleep(3)
-        temperature_c = dhtDevice.temperature
-        temperature_f = temperature_c * (9 / 5) + 32
-        humidity = dhtDevice.humidity
+       
+        moisture = (max_moisture-channel.value)*100/(max_moisture-min_moisture) 
+        adc_value = channel.value
+        moisture2 = ""
+        if moisture >= 100:
+            moisture2 = 100
+        else:
+            moisture2 = "" + "%.1f" % moisture
 
-        if humidity is not None and temperature_c is not None:
+        if moisture2 is not None:
             data = {
                 "flotta_egdedevice_id": get_device_id_from_files(),
-                "temperature": temperature_c,
-                "humidity": humidity,
+                "soil_moisture": moisture2
             }
             payload = json.dumps(data)
-            data_string = "flotta_edgedevice_id,temperature,humidity\n\n"+get_device_id_from_files()+","+str(temperature_c)+","+str(humidity)
+            data_string = "flotta_edgedevice_id,soil_moisture \n\n"+get_device_id_from_files()+","+str(moisture2)
     except RuntimeError as error:
         # Errors happen fairly often, DHT's are hard to read, just keep going
         print(error.args[0])
