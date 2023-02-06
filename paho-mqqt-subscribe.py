@@ -14,13 +14,7 @@ GPIO.setup(relay_ch, GPIO.OUT)
 
 broker = os.getenv("MQTT_BROKER_ADDR", "127.0.0.1")
 topic = os.getenv("MQTT_TOPIC", "sensors/data")
-this_edge_device = os.getenv("DEVICE_ID", "sub_env_device_id_not_set")
 port = 1883
-# topic = "python/mqtt"
-# generate client ID with pub prefix randomly
-client_id = this_edge_device+str(random_id) # concatenate 4 numbers to uniquely identify this device
-# username = 'emqx'
-# password = 'public'
 
 
 def connect_mqtt() -> mqtt_client:
@@ -30,7 +24,7 @@ def connect_mqtt() -> mqtt_client:
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(client_id)
+    client = mqtt_client.Client(get_device_id_from_files()+"_SUBSCRIBER")
     client.username_pw_set("mqtt", "mqtt")
     client.on_connect = on_connect
     client.connect(broker, port)
@@ -61,13 +55,23 @@ def subscribe(client: mqtt_client):
                             print("device is not claimed")
                             
                         else:
-                            print("claim")
                             if(os.path.exists("device_claim.json")):
                                 print("claim file exists")
                             else:
                                 print("claim file not exits, creating it")
                                 f = open("device_claim.json", "a")
                                 f.close()
+                            
+                        # print(msg_json['devices_details'][0]['columns'])
+                        # data_columns = {}
+                        # for value in msg_json['devices_details'][0]['columns']:
+                        #     print(value)
+                            
+                            #save device columns data
+                        # open('device_details.json', 'w').close()
+                        # print("update device details in file")
+                        # f = open("device_details.json", "a")
+                        # f.close()
 
                     elif(msg_json['mqtt_response_for'] == "register_device"):
                         #if file exists device is registered already
